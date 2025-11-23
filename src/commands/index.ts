@@ -25,8 +25,13 @@ export const index = new Command("index")
     "Path to index (defaults to current directory)",
     "",
   )
+  .option(
+    "-e, --exclude <path>",
+    "Path to exclude from indexing (e.g., vendor directory)",
+    "",
+  )
   .action(async (_args, cmd) => {
-    const options: { store?: string; dryRun: boolean; path: string } =
+    const options: { store?: string; dryRun: boolean; path: string; exclude: string } =
       cmd.optsWithGlobals();
 
     let store: Store | null = null;
@@ -39,17 +44,24 @@ export const index = new Command("index")
       const storeId = options.store || getAutoStoreId(indexRoot);
       
       await ensureStoreExists(store, storeId);
+      const ignorePatterns = [
+        "*.lock",
+        "*.bin",
+        "*.ipynb",
+        "*.pyc",
+        "pnpm-lock.yaml",
+        "package-lock.json",
+        "yarn.lock",
+        "bun.lockb",
+      ];
+
+      // Add excluded path if provided
+      if (options.exclude) {
+        ignorePatterns.push(options.exclude);
+      }
+
       const fileSystem = createFileSystem({
-        ignorePatterns: [
-          "*.lock",
-          "*.bin",
-          "*.ipynb",
-          "*.pyc",
-          "pnpm-lock.yaml",
-          "package-lock.json",
-          "yarn.lock",
-          "bun.lockb",
-        ],
+        ignorePatterns,
       });
       const metaStore = new MetaStore();
 
