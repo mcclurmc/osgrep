@@ -690,9 +690,16 @@ export class LocalStore implements Store {
         const scale =
           typeof doc.colbert_scale === "number" ? doc.colbert_scale : 1.0;
         let int8: Int8Array | null = null;
+
+        // Handle different colbert data types from LanceDB
         if (Buffer.isBuffer(doc.colbert)) {
           const buffer = doc.colbert as Buffer;
           int8 = new Int8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+        } else if (ArrayBuffer.isView(doc.colbert)) {
+          // Handle Uint8Array or other typed arrays from LanceDB
+          // These contain signed data (-127 to +127) stored as bytes, so we need to reinterpret
+          const uint8 = doc.colbert as Uint8Array;
+          int8 = new Int8Array(uint8.buffer, uint8.byteOffset, uint8.byteLength);
         } else if (Array.isArray(doc.colbert)) {
           int8 = new Int8Array(doc.colbert as number[]);
         }
